@@ -43,6 +43,9 @@ HttpServer::HttpServer(EventLoop *loop,
 //     std::bind(&HttpServer::onWriteComplete, this, std::placeholders::_1));
   setHttpCallback( 
     std::bind(&HttpServer::onHttpProcess, this, std::placeholders::_1, std::placeholders::_2));
+//   setHttpCallback( 
+//     std::bind(&HttpServer::onHttpProcess, this));
+
 }
 
 void HttpServer::initmysql(ConnectionPool *connPool)
@@ -118,12 +121,12 @@ void HttpServer::onRequest(const TcpConnectionPtr& conn, const HttpRequest& req)
     bool close = connection == "close" ||
                  (req.getVersion() == HttpRequest::kHttp10 && connection != "Keep-Alive");
     HttpResponse response(close);
-    httpCallback_(req, &response);
     Buffer buf;
+    httpCallback_(req, &response);
     response.appendToBuffer(&buf);
     // printf("%s\n", buf.retrieveAllAsString().c_str());
     conn->send(&buf);
-    munmap(mmap_file, fileStat.st_size);
+    // munmap(mmap_file, fileStat.st_size);
     if (response.closeConnection())
     {
     conn->shutdown();
@@ -299,20 +302,34 @@ void HttpServer::onHttpProcess(const HttpRequest &req, HttpResponse *resp)
     //setbody
     // resp->setBody("hello, world!\n");
     const char *open_file = resp->g_file.c_str();
+    //向buffer里面添加
 
-    int file_fd = open(open_file, O_RDONLY);
-    mmap_file = (char*)mmap(NULL, fileStat.st_size, PROT_READ, 
+    if(getCache().get(open_file, resp->body_) == -1){
+        //没有命中
+        int file_fd = open(open_file, O_RDONLY);
+        mmap_file = (char*)mmap(NULL, fileStat.st_size, PROT_READ, 
                                   MAP_PRIVATE, file_fd, 0);
-    close(file_fd);
-    resp->setBody(static_cast<char*>(mmap_file));
-    munmap(mmap_file, fileStat.st_size);
+        close(file_fd);
+        getCache().put(open_file, mmap_file); 
+        resp->setBody(mmap_file);
+        munmap(mmap_file, fileStat.st_size);
+    }else{
+        //命中了
+    }
+
+    // int file_fd = open(open_file, O_RDONLY);
+    // mmap_file = (char*)mmap(NULL, fileStat.st_size, PROT_READ, 
+    //                               MAP_PRIVATE, file_fd, 0);
+    // close(file_fd);
+    // resp->setBody(static_cast<char*>(mmap_file));//body 可以用缓存来缓存页面
+    // munmap(mmap_file, fileStat.st_size);
 
     // FILE *fp = ::fopen(open_file, "rb");
     // if(fp)
     // {
     //     char buf[TcpConnection::kBufSize] = {0};
     //     size_t nread = ::fread(buf, 1, sizeof buf, fp);
-    //     resp->setBody(buf);
+        // resp->setBody(buf);
     // }
 }
 

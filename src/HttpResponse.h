@@ -67,6 +67,7 @@ class HttpResponse : public copyable
   // FIXME: add http version
   std::string statusMessage_;
   bool closeConnection_;//是否关闭连接
+public:
   std::string body_;//正文
 };
 

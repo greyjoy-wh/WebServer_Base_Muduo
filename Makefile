@@ -8,7 +8,7 @@ else
 
 endif
 
-server: main.cc  ./src/*.cc  ./SqlConnection/*.cc ./log/*.cpp
+server: main.cc  ./src/LFUCache/LFUCache.cc ./src/*.cc  ./SqlConnection/*.cc ./log/*.cpp
 	$(CXX) -o server  $^ $(CXXFLAGS) -lpthread -lmysqlclient
 
 clean:
