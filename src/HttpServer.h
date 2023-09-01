@@ -7,6 +7,7 @@
 #include <string>
 #include "../SqlConnection/SqlConnectionPool.h"
 #include <sys/stat.h>
+#include "LFUCache/LFUCache.h"
 
 class HttpRequest;
 class HttpResponse;
